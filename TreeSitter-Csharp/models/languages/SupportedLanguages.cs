@@ -1,0 +1,22 @@
+﻿public enum SupportedLanguages
+{
+    Json,
+    CSharp,
+    Bash,
+    C,
+    CMake,
+    CPP,
+    CSS,
+    DockerFile,
+    Go,
+    GoMod,
+    Java,
+    JavaScript,
+    MarkDown,
+    Perl,
+    Python,
+    Ruby,
+    Rust,
+    Toml,
+    TypeScript
+}
