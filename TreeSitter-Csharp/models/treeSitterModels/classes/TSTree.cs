@@ -46,6 +46,32 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
             ts_tree_edit(Ptr, ref edit);
         }
 
+        public void ImprimirArbol()
+        {
+            // Obtiene el nodo raíz
+            var nodoRaiz = RootNode();
+            // Llama a la función recursiva para imprimir el árbol desde el nodo raíz
+            ImprimirNodo(nodoRaiz, 0);
+        }
+
+        // Función auxiliar recursiva para imprimir un nodo y sus hijos
+        private void ImprimirNodo(TSNode nodo, int indentacion)
+        {
+            // Obtiene las posiciones de inicio y fin
+            var startPoint = nodo.StartPoint();
+            var endPoint = nodo.EndPoint();
+
+            // Construye la cadena con el tipo de nodo y su rango de posición
+            Console.WriteLine($"{new string(' ', indentacion * 2)}{nodo.Type()} [{startPoint.Row}, {startPoint.Column}] - [{endPoint.Row}, {endPoint.Column}]");
+
+            // Recorre todos los hijos nombrados del nodo
+            for (uint i = 0; i < nodo.NamedChildCount(); i++)
+            {
+                // Llama recursivamente para cada hijo
+                ImprimirNodo(nodo.NamedChild(i), indentacion + 1);
+            }
+        }
+
         #region PInvoke
         [DllImport(DllConstants.TreeSitterDll, CallingConvention = CallingConvention.Cdecl)]
         private static extern nint ts_tree_copy(nint tree);

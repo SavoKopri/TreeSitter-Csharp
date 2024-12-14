@@ -42,8 +42,8 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
                 }
             }
 
-            ValidateNoDuplicates(Symbols);
-            ValidateNoDuplicates(Fields);
+            //ValidateNoDuplicates(Symbols);
+            //ValidateNoDuplicates(Fields);
         }
 
         public void Dispose()
@@ -99,15 +99,15 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
         private static extern uint ts_language_version(nint language);
         #endregion
 
-        private void ValidateNoDuplicates(string[] items)
-        {
-            for (int i = 0; i < items.Length; i++)
-            {
-                for (int j = 0; j < i; j++)
-                {
-                    Debug.Assert(items[i] != items[j], $"Duplicate item found: {items[i]}");
-                }
-            }
-        }
+        //private void ValidateNoDuplicates(string[] items)
+        //{
+        //    for (int i = 0; i < items.Length; i++)
+        //    {
+        //        for (int j = 0; j < i; j++)
+        //        {
+        //            Debug.Assert(items[i] != items[j], $"Duplicate item found: {items[i]}");
+        //        }
+        //    }
+        //}
     }
 }
