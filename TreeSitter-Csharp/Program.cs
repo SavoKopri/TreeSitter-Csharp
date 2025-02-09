@@ -1,44 +1,32 @@
-﻿using System.Diagnostics;
+﻿using AnalizadorDeCodigo.Parsers;
+using AnalizadorDeCodigo.Utils;
+using System.Diagnostics;
 using TreeSitter_Csharp.models.treeSitterModels.classes;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Create a parser.
-        using var parser = new TSParser();
+        // Leer el código fuente de un archivo
+        var codigo = UtilidadesDeArchivo.LeerArchivo("PruebaCodigoC.c");
 
-        // Set the parser's language (JSON in this case).
-        var language = new TSLanguage(LanguageLoader.LoadLanguage(SupportedLanguages.Json));
-        parser.SetLanguage(language);
+        // Configurar el parser con el lenguaje (C# en este caso)
+        var gestorDeParser = new GestorDeParser(new TSLanguage(LanguageLoader.LoadLanguage(SupportedLanguages.C)));
 
-        // Build a syntax tree based on source code stored in a string.
-        string sourceCode = "[1, null]";
-        TSTree tree = parser.ParseString(null, sourceCode);
+        // Parsear el código y obtener el árbol de sintaxis
+        using var arbolSintactico = gestorDeParser.ParseCode(codigo);
 
-        // Get the root node of the syntax tree.
-        TSNode rootNode = tree.RootNode();
+        // Crear el QueryHandler con una consulta
+        //string querySource = "(method_declaration name: (identifier) @methodName)";
+        //var queryHandler = new QueryHandler(new TSLanguage(LanguageLoader.LoadLanguage(SupportedLanguages.C)), querySource);
 
-        // Get some child nodes.
-        TSNode arrayNode = rootNode.NamedChild(0);
-        TSNode numberNode = arrayNode.NamedChild(0);
+        // Ejecutar la consulta en el árbol sintáctico
+        //queryHandler.ExecuteQuery(arbolSintactico, codigo);
 
-        // Check that the nodes have the expected types.
-        Debug.Assert(rootNode.Type() == "document", $"Expected 'document', got '{rootNode.Type()}'");
-        Debug.Assert(arrayNode.Type() == "array", $"Expected 'array', got '{arrayNode.Type()}'");
-        Debug.Assert(numberNode.Type() == "number", $"Expected 'number', got '{numberNode.Type()}'");
+        // Limpieza
+        //queryHandler.Dispose();
 
-        // Check that the nodes have the expected child counts.
-        Debug.Assert(rootNode.ChildCount() == 1, $"Expected child count 1, got {rootNode.ChildCount()}");
-        //Debug.Assert(arrayNode.ChildCount() == 2, $"Expected child count 2, got {arrayNode.ChildCount()}");
-        Debug.Assert(arrayNode.NamedChildCount() == 2, $"Expected named child count 2, got {arrayNode.NamedChildCount()}");
-        Debug.Assert(numberNode.ChildCount() == 0, $"Expected child count 0, got {numberNode.ChildCount()}");
-
-        // Print the syntax tree as an S-expression.
-        string syntaxTree = rootNode.ToString();
-        Console.WriteLine($"Syntax tree: {syntaxTree}");
-
-        // Free all of the heap-allocated memory.
-        tree.Dispose();
+        // Imprimir el árbol sintáctico (opcional)
+        arbolSintactico.ImprimirArbol();
     }
 }

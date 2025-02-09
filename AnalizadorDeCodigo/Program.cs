@@ -11,20 +11,20 @@ class Program
         var codigo = UtilidadesDeArchivo.LeerArchivo("codigoFuente.cs");
 
         // Configurar el parser con el lenguaje (C# en este caso)
-        var gestorDeParser = new GestorDeParser(new TSLanguage(LanguageLoader.LoadLanguage(SupportedLanguages.CSharp)));
+        var gestorDeParser = new GestorDeParser(new TSLanguage(LanguageLoader.LoadLanguage(SupportedLanguages.C)));
 
         // Parsear el código y obtener el árbol de sintaxis
         using var arbolSintactico = gestorDeParser.ParseCode(codigo);
 
         // Crear el QueryHandler con una consulta
-        string querySource = "(method_declaration name: (identifier) @methodName)";
-        var queryHandler = new QueryHandler(new TSLanguage(LanguageLoader.LoadLanguage(SupportedLanguages.CSharp)), querySource);
+        //string querySource = "(method_declaration name: (identifier) @methodName)";
+        //var queryHandler = new QueryHandler(new TSLanguage(LanguageLoader.LoadLanguage(SupportedLanguages.C)), querySource);
 
         // Ejecutar la consulta en el árbol sintáctico
         //queryHandler.ExecuteQuery(arbolSintactico, codigo);
 
         // Limpieza
-        queryHandler.Dispose();
+        //queryHandler.Dispose();
 
         // Imprimir el árbol sintáctico (opcional)
         arbolSintactico.ImprimirArbol();
