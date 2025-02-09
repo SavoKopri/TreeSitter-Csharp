@@ -39,7 +39,6 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
         public bool IsExtra() => ts_node_is_extra(this);
         public bool HasChanges() => ts_node_has_changes(this);
         public bool HasError() => ts_node_has_error(this);
-        public TSNode Parent() => ts_node_parent(this);
         public TSNode Child(uint index) => ts_node_child(this, index);
         public nint FieldNameForChild(uint index) => ts_node_field_name_for_child(this, index);
         public uint ChildCount() => ts_node_child_count(this);
@@ -61,9 +60,44 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
 
         public string Text(string data)
         {
+            if (string.IsNullOrEmpty(data))
+                throw new ArgumentException("La cadena de datos no puede ser nula o vacía.");
+
             uint beg = StartOffset();
             uint end = EndOffset();
+
+            if (beg >= data.Length || end > data.Length || beg > end)
+                throw new ArgumentException("El rango del nodo está fuera de los límites de la cadena de datos.");
+
             return data.Substring((int)beg, (int)(end - beg));
+        }
+
+        public TSNode Parent()
+        {
+            if (IsNull())
+                throw new InvalidOperationException("El nodo es nulo.");
+
+            return ts_node_parent(this);
+        }
+
+        public List<TSNode> EncontrarDescendientes(string tipo)
+        {
+            var descendientes = new List<TSNode>();
+            RecorrerDescendientes(this, tipo, descendientes);
+            return descendientes;
+        }
+
+        private void RecorrerDescendientes(TSNode nodo, string tipo, List<TSNode> descendientes)
+        {
+            if (nodo.Type() == tipo)
+            {
+                descendientes.Add(nodo);
+            }
+
+            for (uint i = 0; i < nodo.ChildCount(); i++)
+            {
+                RecorrerDescendientes(nodo.Child(i), tipo, descendientes);
+            }
         }
 
         #region PInvoke

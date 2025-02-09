@@ -27,6 +27,22 @@ class Program
         //queryHandler.Dispose();
 
         // Imprimir el árbol sintáctico (opcional)
-        arbolSintactico.ImprimirArbol();
+        //arbolSintactico.ImprimirArbolConTexto(codigo);
+        var simbolos = arbolSintactico.AnalizarVariables(codigo);
+
+        foreach (var simbolo in simbolos)
+        {
+            Console.WriteLine($"Variable: {simbolo.Name} (Ámbito: {simbolo.Scope})");
+            Console.WriteLine("  Lecturas:");
+            foreach (var linea in simbolo.LinesReaded)
+            {
+                Console.WriteLine($"    {linea}");
+            }
+            Console.WriteLine("  Escrituras:");
+            foreach (var linea in simbolo.LinesWrited)
+            {
+                Console.WriteLine($"    {linea}");
+            }
+        }
     }
 }
