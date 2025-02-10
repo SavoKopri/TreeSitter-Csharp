@@ -191,6 +191,9 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
                     var nombreVariable = hijo.Text(codigoFuente);
                     Console.WriteLine($"Identificador encontrado: {nombreVariable}");
                     return nombreVariable;
+                } else if (hijo.Type() == "init_declarator")
+                {
+                    return ObtenerNombreVariable(hijo, codigoFuente);
                 }
             }
             return null;
@@ -232,7 +235,7 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
                     var simbolo = simbolos[clave];
 
                     // Determinar si es una lectura o escritura
-                    if (EsEscritura(nodo))
+                    if (EsEscritura(nodo, codigoFuente))
                     {
                         Console.WriteLine($"Escritura de variable: {nombreVariable} en línea {nodo.StartPoint().Row + 1}");
                         simbolo.LinesWrited.Add($"Línea {nodo.StartPoint().Row + 1}: {nodo.Text(codigoFuente)}");
@@ -258,28 +261,30 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
 
         private string ObtenerAmbitoActual(TSNode nodo)
         {
-            // Recorrer hacia arriba para encontrar el ámbito actual
             var actual = nodo;
             while (!actual.IsNull())
             {
                 if (actual.Type() == "function_definition")
                 {
+                    // Obtener el nombre de la función
                     var nombreFuncion = ObtenerNombreFuncion(actual, "");
                     Console.WriteLine($"Ámbito actual: función {nombreFuncion}");
                     return nombreFuncion;
                 }
                 else if (actual.Type() == "compound_statement")
                 {
+                    // Si está dentro de un bloque, devolver el ámbito del bloque
                     Console.WriteLine("Ámbito actual: bloque");
                     return "block";
                 }
                 actual = actual.Parent();
             }
+            // Si no está dentro de una función o bloque, es global
             Console.WriteLine("Ámbito actual: global");
             return "global";
         }
 
-        private bool EsEscritura(TSNode nodo)
+        private bool EsEscritura(TSNode nodo, string codigoFuente)
         {
             // Verificar si el nodo es parte de una asignación (escritura)
             var padre = nodo.Parent();
@@ -289,7 +294,7 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
                 var ladoIzquierdo = padre.Child(0);
                 if (ladoIzquierdo.Equals(nodo))
                 {
-                    Console.WriteLine($"Identificador es parte de una asignación (escritura): {nodo.Text("")}");
+                    Console.WriteLine($"Identificador es parte de una asignación (escritura): {nodo.Text(codigoFuente)}");
                     return true;
                 }
             }

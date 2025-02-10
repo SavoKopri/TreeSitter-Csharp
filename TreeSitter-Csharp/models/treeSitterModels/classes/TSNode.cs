@@ -74,8 +74,8 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
 
         public TSNode Parent()
         {
-            if (IsNull())
-                throw new InvalidOperationException("El nodo es nulo.");
+            //if (IsNull())
+            //    throw new InvalidOperationException("El nodo es nulo.");
 
             return ts_node_parent(this);
         }
