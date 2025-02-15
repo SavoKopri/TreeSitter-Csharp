@@ -110,93 +110,78 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
             }
         }
 
-        public List<TSSimbol> AnalizarVariables(string codigoFuente)
+        public List<TSSymbol> AnalizarVariables(string codigoFuente)
         {
-            var simbolos = new Dictionary<string, TSSimbol>();
+            var simbolos = new Dictionary<string, TSSymbol>();
             var nodoRaiz = RootNode();
-
-            Console.WriteLine("Iniciando análisis del árbol...");
-            Console.WriteLine("===============================");
 
             // Paso 1: Encontrar todas las declaraciones de variables con su ámbito
             EncontrarDeclaracionesVariables(nodoRaiz, codigoFuente, simbolos, "global");
 
-            Console.WriteLine("Declaraciones de variables encontradas:");
-            foreach (var clave in simbolos.Keys)
-            {
-                Console.WriteLine($"- {clave}");
-            }
-            Console.WriteLine("===============================");
-
-            // Paso 2: Verificar lecturas y escrituras de variables
-            VerificarLecturasYEscrituras(nodoRaiz, codigoFuente, simbolos);
-
-            Console.WriteLine("Análisis completado.");
-            Console.WriteLine("===============================");
-
             // Devolver la lista de símbolos
-            return new List<TSSimbol>(simbolos.Values);
+            return new List<TSSymbol>(simbolos.Values);
         }
 
-        private void EncontrarDeclaracionesVariables(TSNode nodo, string codigoFuente, Dictionary<string, TSSimbol> simbolos, string ambitoActual)
+        private void EncontrarDeclaracionesVariables(TSNode nodo, string codigoFuente, Dictionary<string, TSSymbol> simbolos, string ambitoActual)
         {
-            Console.WriteLine($"Procesando nodo: Tipo={nodo.Type()}, Ámbito={ambitoActual}");
-
-            // Si el nodo es una declaración de variable, crear un TSSimbol
             if (nodo.Type() == "declaration")
             {
-                var nombreVariable = ObtenerNombreVariable(nodo, codigoFuente);
-                if (!string.IsNullOrEmpty(nombreVariable))
-                {
-                    // Crear una clave única que combine el nombre y el ámbito
-                    var clave = $"{nombreVariable}_{ambitoActual}";
-                    if (!simbolos.ContainsKey(clave))
-                    {
-                        Console.WriteLine($"Encontrada declaración de variable: {nombreVariable} (Ámbito: {ambitoActual})");
-                        simbolos[clave] = new TSSimbol(nombreVariable, ambitoActual);
-                    }
-                }
+                ProcesarDeclaracion(nodo, codigoFuente, simbolos, ambitoActual);
             }
 
-            // Si el nodo es una función o un bloque, actualizar el ámbito actual
-            string nuevoAmbito = ambitoActual;
-            if (nodo.Type() == "function_definition")
+            if (nodo.Type() == "identifier")
             {
-                // El ámbito ahora es el nombre de la función
-                nuevoAmbito = ObtenerNombreFuncion(nodo, codigoFuente);
-                Console.WriteLine($"Entrando en función: {nuevoAmbito}");
-            }
-            else if (nodo.Type() == "compound_statement")
-            {
-                // El ámbito ahora es el bloque actual (podría ser un bucle, una condición, etc.)
-                nuevoAmbito = $"{ambitoActual}_block";
-                Console.WriteLine($"Entrando en bloque: {nuevoAmbito}");
+                ProcesarIdentificador(nodo, codigoFuente, simbolos, ambitoActual);
             }
 
-            // Recorrer los hijos del nodo
+            string nuevoAmbito = nodo.Type() == "function_definition"
+                ? ActualizarAmbito(nodo, ambitoActual, codigoFuente)
+                : ambitoActual;
+
             for (uint i = 0; i < nodo.ChildCount(); i++)
             {
                 EncontrarDeclaracionesVariables(nodo.Child(i), codigoFuente, simbolos, nuevoAmbito);
             }
         }
 
-        private string ObtenerNombreVariable(TSNode nodo, string codigoFuente)
+        private void ProcesarDeclaracion(TSNode nodo, string codigoFuente, Dictionary<string, TSSymbol> simbolos, string ambitoActual)
         {
-            // Buscar el identificador de la variable (el nombre)
-            for (uint i = 0; i < nodo.ChildCount(); i++)
+            var nombreVariable = ObtenerNombreVariable(nodo, codigoFuente);
+            if (!string.IsNullOrEmpty(nombreVariable))
             {
-                var hijo = nodo.Child(i);
-                if (hijo.Type() == "identifier")
+                var clave = $"{ambitoActual}#{nombreVariable}";
+                if (!simbolos.ContainsKey(clave))
                 {
-                    var nombreVariable = hijo.Text(codigoFuente);
-                    Console.WriteLine($"Identificador encontrado: {nombreVariable}");
-                    return nombreVariable;
-                } else if (hijo.Type() == "init_declarator")
-                {
-                    return ObtenerNombreVariable(hijo, codigoFuente);
+                    simbolos[clave] = new TSSymbol(nombreVariable, ambitoActual);
                 }
             }
-            return null;
+        }
+
+        // Si el nodo es una función, actualizar el ámbito actual
+        private string ActualizarAmbito(TSNode nodo, string ambitoActual, string codigoFuente)
+        {
+                // El ámbito ahora es el nombre de la función
+                string nuevoAmbito = ObtenerNombreFuncion(nodo, codigoFuente);
+                return $"{nuevoAmbito}#{ambitoActual}";
+        }
+
+        private void ProcesarIdentificador(TSNode nodo, string codigoFuente, Dictionary<string, TSSymbol> simbolos, string ambitoActual)
+        {
+            var nombreVariable = nodo.Text(codigoFuente);
+            var clave = BuscarSimboloEnTabla(nombreVariable, ambitoActual, simbolos);
+
+            if (simbolos.ContainsKey(clave))
+            {
+                var simbolo = simbolos[clave];
+                if (EsEscritura(nodo, codigoFuente))
+                {
+                    simbolo.LinesWrited.Add($"Línea {nodo.StartPoint().Row + 1}");
+                }
+                else
+                {
+                    simbolo.LinesReaded.Add($"Línea {nodo.StartPoint().Row + 1}");
+                }
+            }
         }
 
         private string ObtenerNombreFuncion(TSNode nodo, string codigoFuente)
@@ -207,82 +192,72 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
                 var hijo = nodo.Child(i);
                 if (hijo.Type() == "identifier")
                 {
-                    var nombreFuncion = hijo.Text(codigoFuente);
-                    Console.WriteLine($"Nombre de función encontrado: {nombreFuncion}");
-                    return nombreFuncion;
+                    return hijo.Text(codigoFuente);
+                }
+                else if (hijo.Type() == "function_declarator")
+                {
+                    return ObtenerNombreFuncion(hijo, codigoFuente);
                 }
             }
             return "anonima";
         }
 
-        private void VerificarLecturasYEscrituras(TSNode nodo, string codigoFuente, Dictionary<string, TSSimbol> simbolos)
+        private string BuscarSimboloEnTabla(string simbolName, string ambitoActual, Dictionary<string, TSSymbol> simbolos)
         {
-            // Verificar si el nodo es una lectura o escritura de una variable
-            if (nodo.Type() == "identifier")
+            // Si el ámbito actual es nulo o vacío, no se puede buscar
+            if (string.IsNullOrEmpty(ambitoActual))
             {
-                var nombreVariable = nodo.Text(codigoFuente);
-                Console.WriteLine($"Identificador encontrado: {nombreVariable}");
+                return string.Empty;
+            }
 
-                // Determinar el ámbito actual del nodo
-                var ambitoActual = ObtenerAmbitoActual(nodo);
-                Console.WriteLine($"Ámbito actual: {ambitoActual}");
+            // Dividir el ámbito actual en sus componentes (por ejemplo, "funcion2#funcion1#global")
+            string[] ambitos = ambitoActual.Split('#');
 
-                // Crear una clave única que combine el nombre y el ámbito
-                var clave = $"{nombreVariable}_{ambitoActual}";
+            // Recorrer los ámbitos desde el menos abarcativo hasta el más abarcativo
+            for (int i = ambitos.Length - 1; i >= 0; i--)
+            {
+                // Construir el ámbito acumulado desde el nivel actual hasta el final
+                string ambitoAcumulado = string.Join("#", ambitos.Skip(i));
 
+                // Construir la clave con el ámbito acumulado y el nombre del símbolo
+                string clave = $"{ambitoAcumulado}#{simbolName}";
+
+                // Verificar si la clave existe en la tabla de símbolos
                 if (simbolos.ContainsKey(clave))
                 {
-                    var simbolo = simbolos[clave];
-
-                    // Determinar si es una lectura o escritura
-                    if (EsEscritura(nodo, codigoFuente))
-                    {
-                        Console.WriteLine($"Escritura de variable: {nombreVariable} en línea {nodo.StartPoint().Row + 1}");
-                        simbolo.LinesWrited.Add($"Línea {nodo.StartPoint().Row + 1}: {nodo.Text(codigoFuente)}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Lectura de variable: {nombreVariable} en línea {nodo.StartPoint().Row + 1}");
-                        simbolo.LinesReaded.Add($"Línea {nodo.StartPoint().Row + 1}: {nodo.Text(codigoFuente)}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Variable no declarada: {nombreVariable} (Ámbito: {ambitoActual})");
+                    return clave; // Devolver la clave si se encuentra el símbolo
                 }
             }
 
-            // Recorrer los hijos del nodo
-            for (uint i = 0; i < nodo.ChildCount(); i++)
-            {
-                VerificarLecturasYEscrituras(nodo.Child(i), codigoFuente, simbolos);
-            }
+            // Si no se encuentra el símbolo en ningún ámbito, devolver vacío
+            return string.Empty;
         }
 
-        private string ObtenerAmbitoActual(TSNode nodo)
+        
+
+        private string ObtenerNombreVariable(TSNode nodo, string codigoFuente)
         {
-            var actual = nodo;
-            while (!actual.IsNull())
+            var pila = new Stack<TSNode>();
+            pila.Push(nodo);
+
+            while (pila.Count > 0)
             {
-                if (actual.Type() == "function_definition")
+                var actual = pila.Pop();
+                if (actual.Type() == "identifier")
                 {
-                    // Obtener el nombre de la función
-                    var nombreFuncion = ObtenerNombreFuncion(actual, "");
-                    Console.WriteLine($"Ámbito actual: función {nombreFuncion}");
-                    return nombreFuncion;
+                    return actual.Text(codigoFuente);
                 }
-                else if (actual.Type() == "compound_statement")
+
+                for (uint i = 0; i < actual.ChildCount(); i++)
                 {
-                    // Si está dentro de un bloque, devolver el ámbito del bloque
-                    Console.WriteLine("Ámbito actual: bloque");
-                    return "block";
+                    pila.Push(actual.Child(i));
                 }
-                actual = actual.Parent();
             }
-            // Si no está dentro de una función o bloque, es global
-            Console.WriteLine("Ámbito actual: global");
-            return "global";
+
+            return string.Empty;
         }
+
+        
 
         private bool EsEscritura(TSNode nodo, string codigoFuente)
         {
@@ -294,7 +269,6 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
                 var ladoIzquierdo = padre.Child(0);
                 if (ladoIzquierdo.Equals(nodo))
                 {
-                    Console.WriteLine($"Identificador es parte de una asignación (escritura): {nodo.Text(codigoFuente)}");
                     return true;
                 }
             }
