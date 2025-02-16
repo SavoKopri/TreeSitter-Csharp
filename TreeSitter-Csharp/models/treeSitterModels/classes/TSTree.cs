@@ -177,7 +177,7 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
                 {
                     simbolo.LinesWrited.Add($"Línea {nodo.StartPoint().Row + 1}");
                 }
-                else
+                else if (!nodo.Parent().Type().Equals("declaration"))
                 {
                     simbolo.LinesReaded.Add($"Línea {nodo.StartPoint().Row + 1}");
                 }
@@ -239,12 +239,17 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
             while (pila.Count > 0)
             {
                 var actual = pila.Pop();
-                if (actual.Type() == "identifier")
+                if (actual.Type().Equals("identifier"))
                 {
                     return actual.Text(codigoFuente);
                 }
+                else if (actual.Type().Equals("init_declarator"))
+                {
+                    TSNode ladoIzquierdo = actual.Child(0);
+                    return ladoIzquierdo.Text(codigoFuente);
+                }
 
-                for (uint i = 0; i < actual.ChildCount(); i++)
+                    for (uint i = 0; i < actual.ChildCount(); i++)
                 {
                     pila.Push(actual.Child(i));
                 }
@@ -259,7 +264,7 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
         {
             // Verificar si el nodo es parte de una asignación (escritura)
             var padre = nodo.Parent();
-            if (padre.Type() == "assignment_expression")
+            if (padre.Type().Equals("assignment_expression"))
             {
                 // El identificador es el lado izquierdo de la asignación
                 var ladoIzquierdo = padre.Child(0);
@@ -267,6 +272,9 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
                 {
                     return true;
                 }
+            } else if (padre.Type().Equals("init_declarator"))
+            {
+                return true;
             }
             return false;
         }

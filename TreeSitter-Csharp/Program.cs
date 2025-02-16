@@ -27,7 +27,7 @@ class Program
         //queryHandler.Dispose();
 
         // Imprimir el árbol sintáctico (opcional)
-        //arbolSintactico.ImprimirArbolConTexto(codigo);
+        arbolSintactico.ImprimirArbolConTexto(codigo);
         var simbolos = arbolSintactico.AnalizarVariables(codigo);
 
         foreach (var simbolo in simbolos)
