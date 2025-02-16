@@ -204,36 +204,32 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
 
         private string BuscarSimboloEnTabla(string simbolName, string ambitoActual, Dictionary<string, TSSymbol> simbolos)
         {
-            // Si el ámbito actual es nulo o vacío, no se puede buscar
             if (string.IsNullOrEmpty(ambitoActual))
             {
                 return string.Empty;
             }
 
-            // Dividir el ámbito actual en sus componentes (por ejemplo, "funcion2#funcion1#global")
             string[] ambitos = ambitoActual.Split('#');
 
-            // Recorrer los ámbitos desde el menos abarcativo hasta el más abarcativo
-            for (int i = ambitos.Length - 1; i >= 0; i--)
+            // Recorrer desde el ámbito más específico hasta el más general
+            for (int i = 0; i < ambitos.Length; i++)
             {
                 // Construir el ámbito acumulado desde el nivel actual hasta el final
                 string ambitoAcumulado = string.Join("#", ambitos.Skip(i));
 
-                // Construir la clave con el ámbito acumulado y el nombre del símbolo
+                // Construir la clave
                 string clave = $"{ambitoAcumulado}#{simbolName}";
 
-                // Verificar si la clave existe en la tabla de símbolos
                 if (simbolos.ContainsKey(clave))
                 {
-                    return clave; // Devolver la clave si se encuentra el símbolo
+                    return clave;
                 }
             }
 
-            // Si no se encuentra el símbolo en ningún ámbito, devolver vacío
             return string.Empty;
         }
 
-        
+
 
         private string ObtenerNombreVariable(TSNode nodo, string codigoFuente)
         {

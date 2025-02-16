@@ -32,25 +32,9 @@ class Program
 
         foreach (var simbolo in simbolos)
         {
-            Console.WriteLine($"Variable: {simbolo.Name} (Ámbito: {simbolo.Scope})");
-            Console.WriteLine("  Lecturas:");
-            if (simbolo.LinesReaded.Count() == 0)
-            {
-                Console.WriteLine("    No se leyo");
-            }
-            foreach (var linea in simbolo.LinesReaded)
-            {
-                Console.WriteLine($"    {linea}");
-            }
-            Console.WriteLine("  Escrituras:");
-            if (simbolo.LinesWrited.Count() == 0)
-            {
-                Console.WriteLine("    No se escribio");
-            }
-            foreach (var linea in simbolo.LinesWrited)
-            {
-                Console.WriteLine($"    {linea}");
-            }
+            Console.WriteLine(simbolo.ToString());
+            Console.WriteLine(" " + simbolo.LinesReadedToString());
+            Console.WriteLine(" " + simbolo.LinesWritedToString());
         }
     }
 }
