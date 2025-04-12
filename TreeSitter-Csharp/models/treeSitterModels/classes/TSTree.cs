@@ -170,17 +170,18 @@ namespace TreeSitter_Csharp.models.treeSitterModels.classes
             var nombreVariable = nodo.Text(codigoFuente);
             var clave = BuscarSimboloEnTabla(nombreVariable, ambitoActual, simbolos);
 
-            if (simbolos.ContainsKey(clave))
+            if (!simbolos.TryGetValue(clave, out var simbolo))
+                return;
+
+            int linea = (int) nodo.StartPoint().Row + 1;
+
+            if (EsEscritura(nodo, codigoFuente))
             {
-                var simbolo = simbolos[clave];
-                if (EsEscritura(nodo, codigoFuente))
-                {
-                    simbolo.LinesWrited.Add($"Línea {nodo.StartPoint().Row + 1}");
-                }
-                else if (!nodo.Parent().Type().Equals("declaration"))
-                {
-                    simbolo.LinesReaded.Add($"Línea {nodo.StartPoint().Row + 1}");
-                }
+                simbolo.AddWriteReference(linea, ambitoActual);
+            }
+            else if (!nodo.Parent().Type().Equals("declaration"))
+            {
+                simbolo.AddReadReference(linea, ambitoActual);
             }
         }
 
